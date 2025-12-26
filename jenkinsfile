@@ -1,0 +1,63 @@
+pipeline {
+    agent any
+
+    environment {
+        APP_DIR = "stud-reg-flask-app"
+        VENV_DIR = "venv"
+    }
+
+    stages {
+
+        stage('Checkout Code') {
+            steps {
+                git branch: 'main',
+                    url: 'https://github.com/Jirage/INTERNSHIP_PROJECT_3.git'
+            }
+        }
+
+        stage('Setup Python Virtual Environment') {
+            steps {
+                sh '''
+                python3 -m venv venv || true
+                source venv/bin/activate
+                pip install --upgrade pip
+                '''
+            }
+        }
+
+        stage('Install Dependencies') {
+            steps {
+                sh '''
+                source venv/bin/activate
+                pip install -r requirements.txt || pip install flask mysql-connector-python
+                '''
+            }
+        }
+
+        stage('Stop Existing Flask App') {
+            steps {
+                sh '''
+                pkill -f app.py || true
+                '''
+            }
+        }
+
+        stage('Start Flask Application') {
+            steps {
+                sh '''
+                source venv/bin/activate
+                nohup python3 app.py > flask.log 2>&1 &
+                '''
+            }
+        }
+    }
+
+    post {
+        success {
+            echo "✅ Flask Application Deployed Successfully!"
+        }
+        failure {
+            echo "❌ Deployment Failed. Check Jenkins logs."
+        }
+    }
+}
