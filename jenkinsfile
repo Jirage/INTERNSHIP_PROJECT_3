@@ -2,62 +2,82 @@ pipeline {
     agent any
 
     environment {
-        APP_DIR = "stud-reg-flask-app"
-        VENV_DIR = "venv"
+        DB_NAME = "studentsdb"
+        DB_USER = "root"
+        DB_PASS = "root"
     }
 
     stages {
 
-        stage('Checkout Code') {
+        stage('Install MariaDB') {
             steps {
-                git branch: 'main',
-                    url: 'https://github.com/Jirage/INTERNSHIP_PROJECT_3.git'
+                sh '''
+                sudo dnf install -y mariadb105-server mariadb105
+                '''
             }
         }
 
-        stage('Setup Python Virtual Environment') {
+        stage('Start MariaDB') {
             steps {
                 sh '''
-                python3 -m venv venv || true
+                sudo systemctl start mariadb
+                '''
+            }
+        }
+
+        stage('Enable MariaDB') {
+            steps {
+                sh '''
+                sudo systemctl enable mariadb
+                '''
+            }
+        }
+
+        stage('Create Database & Table') {
+            steps {
+                sh '''
+                mysql -u${DB_USER} -p${DB_PASS} <<EOF
+                CREATE DATABASE IF NOT EXISTS studentsdb;
+                USE studentsdb;
+
+                CREATE TABLE IF NOT EXISTS students (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    name VARCHAR(100),
+                    email VARCHAR(100),
+                    phone VARCHAR(20),
+                    course VARCHAR(100),
+                    address TEXT,
+                    contact VARCHAR(20)
+                );
+                EOF
+                '''
+            }
+        }
+
+        stage('Clone Repository') {
+            steps {
+                git 'https://github.com/YOUR_GITHUB_USERNAME/stud-reg-flask-app.git'
+            }
+        }
+
+        stage('Install Python Dependencies') {
+            steps {
+                sh '''
+                python3 -m venv venv
                 source venv/bin/activate
                 pip install --upgrade pip
+                pip install flask mysql-connector-python
                 '''
             }
         }
 
-        stage('Install Dependencies') {
+        stage('Run Flask App') {
             steps {
                 sh '''
                 source venv/bin/activate
-                pip install -r requirements.txt || pip install flask mysql-connector-python
+                nohup python3 app.py &
                 '''
             }
-        }
-
-        stage('Stop Existing Flask App') {
-            steps {
-                sh '''
-                pkill -f app.py || true
-                '''
-            }
-        }
-
-        stage('Start Flask Application') {
-            steps {
-                sh '''
-                source venv/bin/activate
-                nohup python3 app.py > flask.log 2>&1 &
-                '''
-            }
-        }
-    }
-
-    post {
-        success {
-            echo "✅ Flask Application Deployed Successfully!"
-        }
-        failure {
-            echo "❌ Deployment Failed. Check Jenkins logs."
         }
     }
 }
