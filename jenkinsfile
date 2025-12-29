@@ -2,6 +2,7 @@ pipeline {
     agent any
 
     environment {
+        APP_SERVER = "localhost"
         DB_NAME = "studentsdb"
         DB_USER = "root"
         DB_PASS = "root"
@@ -9,26 +10,31 @@ pipeline {
 
     stages {
 
-        stage('Install MariaDB') {
+        stage('SSH Test') {
             steps {
                 sh '''
+                ssh -o StrictHostKeyChecking=no ${APP_SERVER} "echo SSH connection successful"
+                '''
+            }
+        }
+
+        stage('Install MariaDB on App Server') {
+            steps {
+                sh '''
+                ssh ${APP_SERVER} "
                 sudo dnf install -y mariadb105-server mariadb105
+                "
                 '''
             }
         }
 
-        stage('Start MariaDB') {
+        stage('Start & Enable MariaDB') {
             steps {
                 sh '''
+                ssh ${APP_SERVER} "
                 sudo systemctl start mariadb
-                '''
-            }
-        }
-
-        stage('Enable MariaDB') {
-            steps {
-                sh '''
                 sudo systemctl enable mariadb
+                "
                 '''
             }
         }
@@ -36,10 +42,10 @@ pipeline {
         stage('Create Database & Table') {
             steps {
                 sh '''
+                ssh ${APP_SERVER} "
                 mysql -u${DB_USER} -p${DB_PASS} <<EOF
                 CREATE DATABASE IF NOT EXISTS studentsdb;
                 USE studentsdb;
-
                 CREATE TABLE IF NOT EXISTS students (
                     id INT AUTO_INCREMENT PRIMARY KEY,
                     name VARCHAR(100),
@@ -50,32 +56,24 @@ pipeline {
                     contact VARCHAR(20)
                 );
                 EOF
+                "
                 '''
             }
         }
 
-        stage('Clone Repository') {
-            steps {
-                git 'https://github.com/YOUR_GITHUB_USERNAME/stud-reg-flask-app.git'
-            }
-        }
-
-        stage('Install Python Dependencies') {
+        stage('Deploy Flask Application') {
             steps {
                 sh '''
+                ssh ${APP_SERVER} "
+                sudo dnf install -y python3 python3-pip
+                git clone https://github.com/YOUR_GITHUB_USERNAME/stud-reg-flask-app.git || true
+                cd stud-reg-flask-app
                 python3 -m venv venv
                 source venv/bin/activate
                 pip install --upgrade pip
                 pip install flask mysql-connector-python
-                '''
-            }
-        }
-
-        stage('Run Flask App') {
-            steps {
-                sh '''
-                source venv/bin/activate
                 nohup python3 app.py &
+                "
                 '''
             }
         }
