@@ -3,8 +3,6 @@ pipeline {
 
     environment {
         DB_NAME = "studentsdb"
-        DB_USER = "root"
-        DB_PASS = "root"
     }
 
     stages {
@@ -29,7 +27,7 @@ pipeline {
         stage('Create Database & Table') {
             steps {
                 sh '''
-                mysql -u${DB_USER} -p${DB_PASS} <<EOF
+                sudo mysql <<EOF
                 CREATE DATABASE IF NOT EXISTS studentsdb;
                 USE studentsdb;
                 CREATE TABLE IF NOT EXISTS students (
