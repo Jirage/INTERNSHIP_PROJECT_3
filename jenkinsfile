@@ -40,7 +40,8 @@ pipeline {
 
         stage('Clone Repository') {
             steps {
-                git 'https://github.com/Jirage/INTERNSHIP_PROJECT_3.git'
+                git branch: 'main',
+                    url: 'https://github.com/Jirage/INTERNSHIP_PROJECT_3.git'
             }
         }
 
