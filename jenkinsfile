@@ -55,11 +55,19 @@ pipeline {
             }
         }
 
+        stage('Stop Existing Flask App') {
+            steps {
+                sh '''
+                sudo fuser -k 5000/tcp || true
+                '''
+            }
+        }
+
         stage('Run Flask App') {
             steps {
                 sh '''
                 source venv/bin/activate
-                python3 app.py
+                nohup python3 app.py > flask.log 2>&1 &
                 '''
             }
         }
