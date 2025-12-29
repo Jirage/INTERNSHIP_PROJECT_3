@@ -55,7 +55,7 @@ pipeline {
         stage('Install Python Dependencies') {
             steps {
                 sh '''
-                python3 -m venv venv
+                python3 -m venv venv || true
                 source venv/bin/activate
                 pip install --upgrade pip
                 pip install flask mysql-connector-python
