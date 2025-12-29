@@ -31,7 +31,7 @@ pipeline {
                     email VARCHAR(100),
                     phone VARCHAR(20),
                     course VARCHAR(100),
-                    address TEXT,
+                    address TEXT
                 );" | sudo mysql
                 '''
             }
