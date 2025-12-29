@@ -66,7 +66,7 @@ pipeline {
                 sh '''
                 ssh ${APP_SERVER} "
                 sudo dnf install -y python3 python3-pip
-                git clone https://github.com/YOUR_GITHUB_USERNAME/stud-reg-flask-app.git || true
+                git clone  https://github.com/Jirage/INTERNSHIP_PROJECT_3.git || true
                 cd stud-reg-flask-app
                 python3 -m venv venv
                 source venv/bin/activate
