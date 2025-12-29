@@ -3,15 +3,14 @@ import mysql.connector
 
 app = Flask(__name__)
 
-# Database configuration
+# Database configuration (EC2 + MariaDB local)
 db_config = {
-    'host': 'db',
+    'host': 'localhost',
     'user': 'root',
-    'password': 'root',
+    'password': '',          # IMPORTANT: empty for unix_socket
     'database': 'studentsdb'
 }
 
-# Home page: Registration form
 @app.route('/', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
@@ -24,18 +23,20 @@ def register():
         conn = mysql.connector.connect(**db_config)
         cursor = conn.cursor()
 
-        query = '''
+        query = """
         INSERT INTO students (name, email, phone, course, address)
         VALUES (%s, %s, %s, %s, %s)
-        '''
+        """
         values = (name, email, phone, course, address)
 
         cursor.execute(query, values)
         conn.commit()
+
         cursor.close()
         conn.close()
 
-        return 'Student Registered Successfully!'
+        return "Student Registered Successfully!"
+
     return render_template('register.html')
 
 if __name__ == '__main__':
